@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using static QRCoder.QRCodeGenerator;
 
 namespace QRCoder
 {
-
     // ReSharper disable once InconsistentNaming
     public class BitmapByteQRCode : AbstractQRCode, IDisposable
     {
@@ -21,19 +21,16 @@ namespace QRCoder
             return GetGraphic(pixelsPerModule, new byte[] { 0x00, 0x00, 0x00 }, new byte[] { 0xFF, 0xFF, 0xFF });
         }
 
-        public byte[] GetGraphic(int pixelsPerModule, string darkColorHtmlHex, string lightColorHtmlHex)
-        {
-            return GetGraphic(pixelsPerModule, HexColorToByteArray(darkColorHtmlHex), HexColorToByteArray(lightColorHtmlHex));
-        }
+        public byte[] GetGraphic(int pixelsPerModule, string darkColorHtmlHex, string lightColorHtmlHex) => GetGraphic(pixelsPerModule, HexColorToByteArray(darkColorHtmlHex), HexColorToByteArray(lightColorHtmlHex));
 
         public byte[] GetGraphic(int pixelsPerModule, byte[] darkColorRgb, byte[] lightColorRgb)
         {
-            var sideLength = this.QrCodeData.ModuleMatrix.Count * pixelsPerModule;
+            var sideLength = QrCodeData.ModuleMatrix.Count * pixelsPerModule;
 
-            var moduleDark = darkColorRgb.Reverse();
+            var moduleDark  = darkColorRgb.Reverse();
             var moduleLight = lightColorRgb.Reverse();
 
-            List<byte> bmp = new List<byte>();
+            var bmp = new List<byte>();
 
             //header
             bmp.AddRange(new byte[] { 0x42, 0x4D, 0x4C, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1A, 0x00, 0x00, 0x00, 0x0C, 0x00, 0x00, 0x00 });
@@ -47,26 +44,20 @@ namespace QRCoder
             bmp.AddRange(new byte[] { 0x01, 0x00, 0x18, 0x00 });
 
             //draw qr code
-            for (var x = sideLength-1; x >= 0; x = x - pixelsPerModule)
+            for (var x = sideLength - 1; x >= 0; x = x - pixelsPerModule)
             {
-                for (int pm = 0; pm < pixelsPerModule; pm++)
+                for (var pm = 0; pm < pixelsPerModule; pm++)
                 {
                     for (var y = 0; y < sideLength; y = y + pixelsPerModule)
                     {
                         var module =
-                            this.QrCodeData.ModuleMatrix[(x + pixelsPerModule)/pixelsPerModule - 1][(y + pixelsPerModule)/pixelsPerModule - 1];
-                        for (int i = 0; i < pixelsPerModule; i++)
-                        {
-                            bmp.AddRange(module ? moduleDark : moduleLight);
-                        }
+                            QrCodeData.ModuleMatrix[(x + pixelsPerModule) / pixelsPerModule - 1][(y + pixelsPerModule) / pixelsPerModule - 1];
+                        for (var i = 0; i < pixelsPerModule; i++) bmp.AddRange(module ? moduleDark : moduleLight);
                     }
-                    if (sideLength%4 != 0)
-                    {
-                        for (int i = 0; i < sideLength%4; i++)
-                        {
+
+                    if (sideLength % 4 != 0)
+                        for (var i = 0; i < sideLength % 4; i++)
                             bmp.Add(0x00);
-                        }
-                    }
                 }
             }
 
@@ -80,20 +71,21 @@ namespace QRCoder
         {
             if (colorString.StartsWith("#"))
                 colorString = colorString.Substring(1);
-            byte[] byteColor = new byte[colorString.Length / 2];
-            for (int i = 0; i < byteColor.Length; i++)
-                byteColor[i] = byte.Parse(colorString.Substring(i * 2, 2), System.Globalization.NumberStyles.HexNumber, System.Globalization.CultureInfo.InvariantCulture);            
+            var byteColor = new byte[colorString.Length / 2];
+            for (var i = 0; i < byteColor.Length; i++)
+                byteColor[i] = byte.Parse(colorString.Substring(i * 2, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture);
             return byteColor;
         }
 
         private byte[] IntTo4Byte(int inp)
         {
-            byte[] bytes = new byte[2];
+            var bytes = new byte[2];
             unchecked
             {
-                bytes[1] = (byte)(inp >> 8);
-                bytes[0] = (byte)(inp);
+                bytes[1] = (byte) (inp >> 8);
+                bytes[0] = (byte) inp;
             }
+
             return bytes;
         }
     }
@@ -102,24 +94,23 @@ namespace QRCoder
     public static class BitmapByteQRCodeHelper
     {
         public static byte[] GetQRCode(string plainText, int pixelsPerModule, string darkColorHtmlHex,
-            string lightColorHtmlHex, ECCLevel eccLevel, bool forceUtf8 = false, bool utf8BOM = false,
-            EciMode eciMode = EciMode.Default, int requestedVersion = -1)
+                                       string lightColorHtmlHex, ECCLevel eccLevel, bool forceUtf8 = false, bool utf8BOM = false,
+                                       EciMode eciMode = EciMode.Default, int requestedVersion = -1)
         {
             using (var qrGenerator = new QRCodeGenerator())
             using (
                 var qrCodeData = qrGenerator.CreateQrCode(plainText, eccLevel, forceUtf8, utf8BOM, eciMode,
-                    requestedVersion))
+                                                          requestedVersion))
             using (var qrCode = new BitmapByteQRCode(qrCodeData))
                 return qrCode.GetGraphic(pixelsPerModule, darkColorHtmlHex, lightColorHtmlHex);
         }
 
-        public static byte[] GetQRCode(string txt, QRCodeGenerator.ECCLevel eccLevel, int size)
+        public static byte[] GetQRCode(string txt, ECCLevel eccLevel, int size)
         {
             using (var qrGen = new QRCodeGenerator())
             using (var qrCode = qrGen.CreateQrCode(txt, eccLevel))
             using (var qrBmp = new BitmapByteQRCode(qrCode))
                 return qrBmp.GetGraphic(size);
-
         }
     }
 }
