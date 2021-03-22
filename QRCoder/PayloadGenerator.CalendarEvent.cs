@@ -1,10 +1,14 @@
 ﻿using System;
+using Ical.Net;
+using Ical.Net.CalendarComponents;
+using Ical.Net.DataTypes;
+using Ical.Net.Serialization;
 
 namespace QRCoder
 {
     public static partial class PayloadGenerator
     {
-        public class CalendarEvent : Payload
+        public class IcsEvent : Payload
         {
             public enum EventEncoding
             {
@@ -13,7 +17,7 @@ namespace QRCoder
             }
 
             private readonly EventEncoding encoding;
-            private readonly string subject, description, location, start, end;
+            private readonly CalendarEvent internalEvent;
 
             /// <summary>
             /// Generates a calender entry/event payload.
@@ -25,29 +29,30 @@ namespace QRCoder
             /// <param name="end">End time of the event</param>
             /// <param name="allDayEvent">Is it a full day event?</param>
             /// <param name="encoding">Type of encoding (universal or iCal)</param>
-            public CalendarEvent(string subject, string description, string location, DateTime start, DateTime end, bool allDayEvent, EventEncoding encoding = EventEncoding.Universal)
+            public IcsEvent(string subject, string description, string location, DateTime start, DateTime end, bool allDayEvent, EventEncoding encoding = EventEncoding.Universal)
             {
-                this.subject     = subject;
-                this.description = description;
-                this.location    = location;
-                this.encoding    = encoding;
-                var dtFormat = allDayEvent ? "yyyyMMdd" : "yyyyMMddTHHmmss";
-                this.start = start.ToString(dtFormat);
-                this.end   = end.ToString(dtFormat);
+                internalEvent             = new CalendarEvent();
+                internalEvent.Summary     = subject;
+                internalEvent.Description = description;
+                internalEvent.Location    = location;
+                this.encoding             = encoding;
+                internalEvent.DtStart     = new CalDateTime(start);
+                internalEvent.DtEnd       = new CalDateTime(end);
+            }
+
+            public IcsEvent(CalendarEvent calendarEvent, EventEncoding encoding = EventEncoding.Universal)
+            {
+                var cal = new Calendar();
+                cal.Events.Add(new CalendarEvent());
             }
 
             public override string ToString()
             {
-                var vEvent = $"BEGIN:VEVENT{Environment.NewLine}";
-                vEvent += $"SUMMARY:{subject}{Environment.NewLine}";
-                vEvent += !string.IsNullOrEmpty(description) ? $"DESCRIPTION:{description}{Environment.NewLine}" : "";
-                vEvent += !string.IsNullOrEmpty(location) ? $"LOCATION:{location}{Environment.NewLine}" : "";
-                vEvent += $"DTSTART:{start}{Environment.NewLine}";
-                vEvent += $"DTEND:{end}{Environment.NewLine}";
-                vEvent += "END:VEVENT";
-
-                if (encoding == EventEncoding.iCalComplete)
-                    vEvent = $@"BEGIN:VCALENDAR{Environment.NewLine}VERSION:2.0{Environment.NewLine}{vEvent}{Environment.NewLine}END:VCALENDAR";
+                var cal = new Calendar();
+                cal.Events.Add(new CalendarEvent());
+                var serializer         = new CalendarSerializer();
+                var serializedCalendar = serializer.SerializeToString(cal);
+                var vEvent             = serializedCalendar;
 
                 return vEvent;
             }

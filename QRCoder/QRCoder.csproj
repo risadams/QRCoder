@@ -13,15 +13,16 @@
   <PropertyGroup>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <PackageId>QRocket.QRCoder</PackageId>
-    <Version>1.4.1</Version>
-    <Authors>Raffael Herrmann/Ris Adams</Authors>
+    <Version>1.4.2</Version>
+    <Authors>Raffael Herrmann,Ris Adams</Authors>
     <AssemblyName>QRCoder</AssemblyName>
     <RootNamespace>QRCoder</RootNamespace>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/risadams/QRCoder</PackageProjectUrl>
-    <PackageIconUrl>http://code-bude.net/downloads/qrcoder-logo.png</PackageIconUrl>
     <PackageTags>c# csharp qr qrcoder qrcode qr-generator qr-code-generator</PackageTags>
     <RepositoryUrl>https://github.com/risadams/QRCoder.git</RepositoryUrl>
+    <PackageIcon>icon.png</PackageIcon>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net35' or '$(TargetFramework)' == 'net40' ">
@@ -30,8 +31,16 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+  <ItemGroup>
+    <PackageReference Include="QRocket.Ical.Net" Version="4.1.8" />
     <PackageReference Include="System.Drawing.Common" Version="5.0.2" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <None Include="icon.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
   <PropertyGroup>
